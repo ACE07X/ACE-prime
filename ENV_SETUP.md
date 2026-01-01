@@ -6,6 +6,7 @@ To run ACE Prime, you need to create a `.env` file in the `ace-prime` directory 
 
 ```env
 DISCORD_TOKEN=your_discord_bot_token_here
+DISCORD_CLIENT_ID=your_discord_client_id_here
 ```
 
 ## Optional
@@ -15,14 +16,16 @@ OPENAI_API_KEY=your_openai_api_key_here
 OPENAI_MODEL=gpt-4
 ```
 
-## How to Get Your Discord Bot Token
+## How to Get Your Discord Bot Token and Client ID
 
 1. Go to https://discord.com/developers/applications
 2. Click "New Application" and give it a name (e.g., "ACE Prime")
-3. Go to the "Bot" section in the left sidebar
-4. Click "Add Bot" if you haven't already
-5. Under "Token", click "Reset Token" or "Copy" to get your bot token
-6. Paste it into your `.env` file as `DISCORD_TOKEN`
+3. Go to the "General Information" section - your **Application ID** (Client ID) is shown here
+   - Copy this and paste it into your `.env` file as `DISCORD_CLIENT_ID`
+4. Go to the "Bot" section in the left sidebar
+5. Click "Add Bot" if you haven't already
+6. Under "Token", click "Reset Token" or "Copy" to get your bot token
+7. Paste it into your `.env` file as `DISCORD_TOKEN`
 
 ## How to Get Your OpenAI API Key (Optional)
 
@@ -39,6 +42,7 @@ Create a file named `.env` in the `ace-prime` directory with:
 
 ```env
 DISCORD_TOKEN=your_discord_bot_token_here
+DISCORD_CLIENT_ID=your_discord_client_id_here
 OPENAI_API_KEY=your_openai_api_key_here
 OPENAI_MODEL=gpt-4
 ```

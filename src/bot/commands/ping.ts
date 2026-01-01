@@ -1,12 +1,15 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
+import { SlashCommand } from './types';
 
-export const data = new SlashCommandBuilder()
-  .setName('ping')
-  .setDescription('Check bot latency');
+const command: SlashCommand = {
+  data: new SlashCommandBuilder()
+    .setName('ping')
+    .setDescription('Check bot latency'),
 
-export async function execute(interaction: ChatInputCommandInteraction) {
-  const sent = await interaction.reply({ content: 'Pinging...', fetchReply: true });
-  const latency = sent.createdTimestamp - interaction.createdTimestamp;
-  await interaction.editReply(`🏓 Pong! Latency: ${latency}ms | API: ${interaction.client.ws.ping}ms`);
-}
+  async execute(interaction: ChatInputCommandInteraction) {
+    await interaction.reply('Pong 🏓');
+  },
+};
+
+export default command;
 

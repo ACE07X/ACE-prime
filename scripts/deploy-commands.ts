@@ -1,11 +1,11 @@
 import { REST, Routes, SlashCommandBuilder } from 'discord.js';
 import 'dotenv/config';
 
-const TOKEN = process.env['DISCORD_BOT_TOKEN'] || process.env['DISCORD_TOKEN'];
-const CLIENT_ID = process.env['DISCORD_CLIENT_ID'];
+const TOKEN = process.env.DISCORD_TOKEN;
+const CLIENT_ID = process.env.DISCORD_CLIENT_ID;
 
 if (!TOKEN) {
-  console.error('DISCORD_BOT_TOKEN or DISCORD_TOKEN is not set.');
+  console.error('DISCORD_TOKEN is not set.');
   process.exit(1);
 }
 

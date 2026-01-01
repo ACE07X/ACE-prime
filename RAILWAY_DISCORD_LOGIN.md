@@ -6,13 +6,14 @@ All required components are in place:
 
 ### 1. Entry Point
 - ✅ File: `src/index.ts`
-- ✅ Compiled to: `dist/index.js`
-- ✅ Railway runs: `npm start` → `node dist/index.js`
+- ✅ Railway runs: `npm start` → `tsx src/index.ts`
+- ✅ TypeScript runs directly via `tsx` (no build step required)
 
 ### 2. Environment Variables
 - ✅ `import 'dotenv/config'` - Loads env vars safely
-- ✅ `process.env['DISCORD_TOKEN']` - Uses bracket notation
-- ✅ Runtime guard checks token before login
+- ✅ `process.env.DISCORD_TOKEN` - Uses dot notation
+- ✅ `process.env.DISCORD_CLIENT_ID` - Required for slash command registration
+- ✅ Runtime guards check tokens before login
 
 ### 3. Discord Client
 - ✅ Client created with required intents
@@ -51,8 +52,11 @@ ACE Prime logged in as ACE Prime#xxxx
 
 ### If you see: "Starting ACE Prime..." but no login message
 - **Check:** Railway Start Command is exactly: `npm start`
-- **Check:** Build completed successfully (`npm run build`)
-- **Check:** `dist/index.js` exists after build
+- **Check:** Dependencies installed successfully (`npm install`)
+- **Check:** `tsx` is available (it's a production dependency)
+
+### If you see: "DISCORD_CLIENT_ID is not set. Bot cannot start."
+- **Fix:** Add `DISCORD_CLIENT_ID` in Railway → Service → Variables
 
 ## 🚀 Railway Configuration
 
@@ -60,14 +64,11 @@ ACE Prime logged in as ACE Prime#xxxx
 ```
 npm start
 ```
-
-### Build Command (if needed)
-```
-npm run build
-```
+(This runs `tsx src/index.ts` - no build step required)
 
 ### Environment Variables Required
 - `DISCORD_TOKEN` - Your Discord bot token (REQUIRED)
+- `DISCORD_CLIENT_ID` - Your Discord application client ID (REQUIRED)
 - `OPENAI_API_KEY` - Optional (bot runs in fallback mode if missing)
 - `NODE_ENV` - Optional (set to `production`)
 

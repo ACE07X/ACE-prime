@@ -15,34 +15,40 @@ npm run build
 
 ## ✅ Runtime Guards
 
-### DISCORD_TOKEN Guard
+### DISCORD_TOKEN and DISCORD_CLIENT_ID Guards
 
-Located in `src/index.ts` within the `main()` function (runtime only, not build time):
+Located in `src/index.ts` at module level (runtime only, not build time):
 
 ```typescript
-const discordToken = process.env['DISCORD_TOKEN'];
-if (!discordToken || discordToken.trim().length === 0) {
+const token = process.env.DISCORD_TOKEN;
+const clientId = process.env.DISCORD_CLIENT_ID;
+
+if (!token) {
   console.error('DISCORD_TOKEN is not set. Bot cannot start.');
+  process.exit(1);
+}
+
+if (!clientId) {
+  console.error('DISCORD_CLIENT_ID is not set. Bot cannot start.');
   process.exit(1);
 }
 ```
 
 **Behavior:**
-- ✅ Checks token at runtime only (when `main()` executes)
-- ✅ Uses bracket notation: `process.env['DISCORD_TOKEN']`
-- ✅ Logs exact error: "DISCORD_TOKEN is not set. Bot cannot start."
+- ✅ Checks tokens at runtime only (when module executes)
+- ✅ Uses dot notation: `process.env.DISCORD_TOKEN` and `process.env.DISCORD_CLIENT_ID`
+- ✅ Logs exact errors: "DISCORD_TOKEN is not set. Bot cannot start." / "DISCORD_CLIENT_ID is not set. Bot cannot start."
 - ✅ Exits with non-zero code: `process.exit(1)`
 
 ## ✅ Environment Variable Access
 
-All environment variables are accessed using bracket notation:
+All environment variables are accessed using dot notation:
 
-- `process.env['DISCORD_TOKEN']` - Required, checked at runtime
-- `process.env['OPENAI_API_KEY']` - Optional, checked at runtime
-- `process.env['OPENAI_MODEL']` - Optional, defaults to 'gpt-4'
-- `process.env['NODE_ENV']` - Optional, used for development mode
-
-**No dot notation used anywhere** (`process.env.VAR_NAME` is not used).
+- `process.env.DISCORD_TOKEN` - Required, checked at runtime
+- `process.env.DISCORD_CLIENT_ID` - Required, checked at runtime
+- `process.env.OPENAI_API_KEY` - Optional, checked at runtime
+- `process.env.OPENAI_MODEL` - Optional, defaults to 'gpt-4'
+- `process.env.NODE_ENV` - Optional, used for development mode
 
 ## ✅ Safe dotenv Configuration
 
@@ -73,6 +79,7 @@ All environment variable checks happen at runtime:
 1. User creates `.env` file manually:
    ```env
    DISCORD_TOKEN=your_token_here
+   DISCORD_CLIENT_ID=your_client_id_here
    ```
 
 2. Run the bot:
@@ -88,15 +95,16 @@ All environment variable checks happen at runtime:
 
 1. Railway injects environment variables automatically
 2. No `.env` file required
-3. Build succeeds: `npm run build` (no env vars needed)
-4. Runtime check: If `DISCORD_TOKEN` missing, logs error and exits
+3. No build step required: Railway runs `npm start` → `tsx src/index.ts` directly
+4. Runtime checks: If `DISCORD_TOKEN` or `DISCORD_CLIENT_ID` missing, logs error and exits
+5. `tsx` is included as a production dependency for direct TypeScript execution
 
 ## ✅ Security
 
 - ✅ No secrets hardcoded
 - ✅ `.env` file is gitignored
 - ✅ `.env.example` contains only placeholders
-- ✅ All env access uses safe bracket notation
+- ✅ All env access uses dot notation
 - ✅ No auto-generation of `.env` files
 
 ## Test Commands
