@@ -2,6 +2,27 @@
 
 **Production-grade Discord bot with dual-persona system and modular architecture.**
 
+## 🚀 Quick Start
+
+### ⚠️ **BOT CRASHING?** Read This First!
+
+If your bot is crashing on Railway, it's because environment variables are missing.
+
+**👉 [COMPLETE_SETUP.md](./COMPLETE_SETUP.md) - Full setup guide with step-by-step instructions**
+
+**Quick Fix:**
+1. Go to Railway → Your Service → **Variables** tab
+2. Add these 3 variables:
+   - `DISCORD_TOKEN` = Your bot token
+   - `DISCORD_CLIENT_ID` = Your application ID
+   - `NODE_ENV` = `production`
+3. Railway will auto-redeploy
+4. Check logs - you should see `✅ ACE Prime is ONLINE!`
+
+**Need help?** See [COMPLETE_SETUP.md](./COMPLETE_SETUP.md) for detailed instructions.
+
+---
+
 ## 🎯 Overview
 
 ACE Prime is a sophisticated Discord bot designed as an AI coding assistant and project manager. It features a unique dual-persona system that adapts its behavior based on user identity.
