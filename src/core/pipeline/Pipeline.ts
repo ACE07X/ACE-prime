@@ -201,7 +201,7 @@ export class Pipeline<TOutput = unknown> {
 
           this.logger.debug(`Stage completed: ${stage.stageName}`, {
             messageId: message.id,
-            executionTime: result.metadata?.executionTime,
+            executionTime: result.metadata?.['executionTime'],
           });
 
         } catch (error) {

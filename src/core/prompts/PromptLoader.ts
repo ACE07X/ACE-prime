@@ -70,7 +70,8 @@ export class PromptLoader {
   constructor(config: PromptLoaderConfig) {
     this.config = {
       promptsDirectory: config.promptsDirectory || path.join(process.cwd(), 'prompts'),
-      enableHotReload: config.enableHotReload ?? process.env.NODE_ENV === 'development',
+      // Use bracket notation for safe environment variable access
+      enableHotReload: config.enableHotReload ?? process.env['NODE_ENV'] === 'development',
       logger: config.logger,
     };
     

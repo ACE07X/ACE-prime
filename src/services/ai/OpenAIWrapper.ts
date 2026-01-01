@@ -26,7 +26,8 @@ export class OpenAIWrapper implements AIService {
   private readonly model: string;
 
   constructor() {
-    const apiKey = process.env.OPENAI_API_KEY;
+    // Use bracket notation for safe environment variable access
+    const apiKey = process.env['OPENAI_API_KEY'];
 
     if (!apiKey || apiKey.trim().length === 0) {
       throw new Error(
@@ -40,7 +41,8 @@ export class OpenAIWrapper implements AIService {
     });
 
     // Default to gpt-4 if not specified
-    this.model = process.env.OPENAI_MODEL || 'gpt-4';
+    // Use bracket notation for safe access
+    this.model = process.env['OPENAI_MODEL'] || 'gpt-4';
   }
 
   /**

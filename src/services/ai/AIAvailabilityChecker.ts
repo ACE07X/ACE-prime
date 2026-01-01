@@ -10,10 +10,14 @@ export class AIAvailabilityChecker {
   /**
    * Check if OpenAI API key is configured.
    * 
+   * Uses bracket notation for safe environment variable access.
+   * Works with both .env files (local) and Railway environment variables.
+   * 
    * @returns True if API key is present and non-empty, false otherwise
    */
   static isOpenAIAvailable(): boolean {
-    const apiKey = process.env.OPENAI_API_KEY;
+    // Use bracket notation for safe access
+    const apiKey = process.env['OPENAI_API_KEY'];
     return !!(apiKey && apiKey.trim().length > 0);
   }
 }

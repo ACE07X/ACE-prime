@@ -27,7 +27,8 @@ export class ConsoleLogger implements Logger {
   }
 
   debug(message: string, meta?: Record<string, unknown>): void {
-    if (process.env.NODE_ENV === 'development') {
+    // Use bracket notation for safe environment variable access
+    if (process.env['NODE_ENV'] === 'development') {
       console.debug(`[DEBUG] ${message}`, meta || '');
     }
   }
