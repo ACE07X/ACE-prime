@@ -1,13 +1,12 @@
+// Load environment variables from .env file (if it exists)
+// This is safe - does not throw if .env is missing
+// On Railway, environment variables are injected automatically
+import 'dotenv/config';
+
 import { Client, GatewayIntentBits } from 'discord.js';
-import dotenv from 'dotenv';
 import { MessageHandler } from './events/MessageHandler';
 import { ConsoleLogger } from './utils/logger';
 import { SYSTEM_CONSTANTS } from './config/constants';
-
-// Load environment variables from .env file (if it exists)
-// This is safe - dotenv.config() does not throw if .env is missing
-// On Railway, environment variables are injected automatically
-dotenv.config();
 
 /**
  * Main entry point for ACE Prime Discord bot.
@@ -22,6 +21,7 @@ dotenv.config();
 async function main() {
   const logger = new ConsoleLogger();
 
+  console.log('Starting ACE Prime...');
   logger.info('Starting ACE Prime...', {
     version: SYSTEM_CONSTANTS.VERSION,
     botName: SYSTEM_CONSTANTS.BOT_NAME,
@@ -37,6 +37,8 @@ async function main() {
     process.exit(1);
   }
 
+  console.log('DISCORD_TOKEN found, initializing Discord client...');
+
   // Create Discord client
   const client = new Client({
     intents: [
@@ -51,6 +53,8 @@ async function main() {
 
   // Set up event handlers
   client.once('ready', () => {
+    // Use console.log for Railway visibility - this confirms Discord connection
+    console.log(`ACE Prime logged in as ${client.user?.tag}`);
     logger.info('ACE Prime is online and ready!', {
       botName: client.user?.tag,
       botId: client.user?.id,
@@ -82,10 +86,13 @@ async function main() {
     process.exit(0);
   });
 
-  // Login to Discord
+  // Login to Discord - CRITICAL: This must be called for bot to go online
   try {
+    console.log('Attempting to login to Discord...');
     await client.login(discordToken);
+    // If login succeeds, 'ready' event will fire and log connection status
   } catch (error) {
+    console.error('Failed to login to Discord:', (error as Error).message);
     logger.error('Failed to login to Discord', {
       error: (error as Error).message,
       stack: (error as Error).stack,
