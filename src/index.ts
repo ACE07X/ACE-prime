@@ -14,7 +14,7 @@ import { SYSTEM_CONSTANTS } from './config/constants';
  * Initializes Discord client and sets up message handling.
  * 
  * Environment Variables:
- * - DISCORD_TOKEN: Required - Discord bot token
+ * - DISCORD_BOT_TOKEN: Required - Discord bot token
  * - OPENAI_API_KEY: Optional - OpenAI API key (bot runs in fallback mode if missing)
  * - NODE_ENV: Optional - Set to 'production' on Railway
  */
@@ -30,14 +30,14 @@ async function main() {
   // Startup guard: Validate Discord token is set
   // Runtime check only - this runs when the app starts, not during build
   // Use bracket notation for safe access
-  const discordToken = process.env['DISCORD_TOKEN'];
+  const discordToken = process.env['DISCORD_BOT_TOKEN'];
   if (!discordToken || discordToken.trim().length === 0) {
     // Use console.error to match exact requirement
-    console.error('DISCORD_TOKEN is not set. Bot cannot start.');
+    console.error('DISCORD_BOT_TOKEN is not set. Bot cannot start.');
     process.exit(1);
   }
 
-  console.log('DISCORD_TOKEN found, initializing Discord client...');
+  console.log('DISCORD_BOT_TOKEN found, initializing Discord client...');
 
   // Create Discord client
   const client = new Client({
