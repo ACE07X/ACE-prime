@@ -45,5 +45,6 @@ Thumbs.db
 
 # Sensitive files (DO NOT COMMIT)
 RAILWAY_ENV_SETUP.txt
+YOUR_RAILWAY_VARS.txt
 *.token
 *.secret
