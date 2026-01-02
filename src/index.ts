@@ -1,204 +1,121 @@
-import 'dotenv/config';
 import { Client, GatewayIntentBits, Collection, REST, Routes } from 'discord.js';
-import { ConsoleLogger } from './utils/logger';
-import { SlashCommand } from './bot/commands/types';
+import 'dotenv/config';
+import { prisma } from './services/database.js';
 
-// Import commands
-import helloCommand from './bot/commands/hello';
-import pingCommand from './bot/commands/ping';
+// Commands
+import { helloCommand } from './bot/commands/hello.js';
+import { pingCommand } from './bot/commands/ping.js';
+import { projectCommand } from './bot/commands/project.js';
 
-const token = process.env.DISCORD_TOKEN;
-const clientId = process.env.DISCORD_CLIENT_ID;
-const nodeEnv = process.env.NODE_ENV || 'development';
+// Config
+const TOKEN = process.env.DISCORD_TOKEN!;
+const CLIENT_ID = process.env.DISCORD_CLIENT_ID!;
+const OWNER_ID = process.env.OWNER_DISCORD_ID || '618512174620475394';
 
-console.log('[BOOT] Starting ACE Prime...');
-console.log(`[BOOT] NODE_ENV: ${nodeEnv}`);
-
-// Validate environment variables
-if (!token) {
-  console.error('❌ DISCORD_TOKEN is not set. Bot cannot start.');
-  console.error('   Please set DISCORD_TOKEN in Railway environment variables.');
-  process.exit(1);
+// Extend client
+declare module 'discord.js' {
+  interface Client {
+    commands: Collection<string, any>;
+  }
 }
 
-if (!clientId) {
-  console.error('❌ DISCORD_CLIENT_ID is not set. Bot cannot start.');
-  console.error('   Please set DISCORD_CLIENT_ID in Railway environment variables.');
-  process.exit(1);
-}
+// All commands
+const commands = [helloCommand, pingCommand, projectCommand];
 
-// Validate token format (Discord tokens start with specific prefixes)
-if (!token.match(/^[MN][A-Za-z\d]{23}\.[\w-]{6}\.[\w-]{27}$/)) {
-  console.warn('⚠️  DISCORD_TOKEN format looks invalid. Token should be a valid Discord bot token.');
-  console.warn('   Token format: MTA... or NTA... followed by base64 characters');
-}
-
-console.log('✅ DISCORD_TOKEN found');
-console.log(`✅ DISCORD_CLIENT_ID found: ${clientId}`);
-console.log('🔧 Initializing Discord client...');
-
+// Create client
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMembers,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
   ],
-}) as Client & { commands: Collection<string, SlashCommand> };
+});
 
-// Initialize commands collection
-client.commands = new Collection<string, SlashCommand>();
+client.commands = new Collection();
 
-// Load commands
-const commands: SlashCommand[] = [helloCommand, pingCommand];
-for (const command of commands) {
-  client.commands.set(command.data.name, command);
-  console.log(`Loaded command: /${command.data.name}`);
+// Load commands into collection
+for (const cmd of commands) {
+  client.commands.set(cmd.data.name, cmd);
 }
 
-const logger = new ConsoleLogger();
-
-// Register slash commands
-async function registerSlashCommands() {
-  const rest = new REST({ version: '10' }).setToken(token!);
-  const commandData = commands.map(cmd => cmd.data.toJSON());
-
-  try {
-    console.log(`Registering ${commandData.length} slash commands...`);
-    await rest.put(
-      Routes.applicationCommands(clientId!),
-      { body: commandData }
-    );
-    console.log('✅ Slash commands registered globally');
-  } catch (error) {
-    console.error('❌ Failed to register commands:', error);
-  }
-}
-
-client.once('ready', async () => {
-  console.log('═══════════════════════════════════════');
-  console.log('✅ ACE Prime is ONLINE!');
-  console.log(`   Bot: ${client.user?.tag} (${client.user?.id})`);
-  console.log(`   Servers: ${client.guilds.cache.size}`);
-  console.log(`   Commands: ${client.commands.size}`);
-  console.log('═══════════════════════════════════════');
+// Register slash commands with Discord API
+async function registerCommands() {
+  const rest = new REST({ version: '10' }).setToken(TOKEN);
   
+  console.log('🚀 Registering slash commands...');
+  
+  await rest.put(
+    Routes.applicationCommands(CLIENT_ID),
+    { body: commands.map(cmd => cmd.data.toJSON()) }
+  );
+  
+  console.log('✅ Slash commands registered!');
+}
+
+// Ready event
+client.once('ready', async () => {
+  console.log(`✨ ACE Prime is online as ${client.user?.tag}`);
+  console.log(`📊 Serving ${client.guilds.cache.size} servers`);
+  
+  // Test database connection
   try {
-    await registerSlashCommands();
+    await prisma.$connect();
+    console.log('✅ Database connected');
   } catch (error) {
-    console.error('❌ Failed to register commands on ready:', error);
+    console.warn('⚠️  Database not connected (continuing without database):', (error as Error).message);
+    console.warn('   Bot will continue to run, but project features will be unavailable.');
   }
 });
 
+// Handle interactions
 client.on('interactionCreate', async (interaction) => {
   if (!interaction.isChatInputCommand()) return;
 
   const command = client.commands.get(interaction.commandName);
   if (!command) return;
 
+  // Determine persona
+  const isOwner = interaction.user.id === OWNER_ID;
+  const persona = isOwner ? 'butler' : 'supervisor';
+
   try {
-    await command.execute(interaction);
-  } catch (error: unknown) {
-    console.error(`Error executing command ${interaction.commandName}:`, error);
-    await interaction.reply({ content: 'There was an error executing this command!', ephemeral: true }).catch(() => {});
-  }
-});
-
-// Discord client event handlers
-client.on('error', (error: Error) => {
-  console.error('❌ Discord client error:', error.message);
-  console.error('   Stack:', error.stack);
-  logger.error('Discord client error', {
-    error: error.message,
-    stack: error.stack,
-  });
-});
-
-client.on('warn', (warning: string) => {
-  console.warn('⚠️  Discord client warning:', warning);
-});
-
-client.on('debug', (info: string) => {
-  if (nodeEnv === 'development') {
-    console.debug('[DEBUG]', info);
-  }
-});
-
-client.on('disconnect', () => {
-  console.warn('⚠️  Bot disconnected from Discord. Will attempt to reconnect...');
-});
-
-client.on('reconnecting', () => {
-  console.log('🔄 Reconnecting to Discord...');
-});
-
-client.on('shardError', (error: Error) => {
-  console.error('❌ Shard error:', error.message);
-  console.error('   Stack:', error.stack);
-});
-
-// Handle unhandled errors
-process.on('unhandledRejection', (reason: unknown, promise: Promise<unknown>) => {
-  console.error('❌ Unhandled Rejection at:', promise);
-  console.error('   Reason:', reason);
-  logger.error('Unhandled rejection', {
-    reason: reason instanceof Error ? reason.message : String(reason),
-    stack: reason instanceof Error ? reason.stack : undefined,
-  });
-});
-
-process.on('uncaughtException', (error: Error) => {
-  console.error('❌ Uncaught Exception:', error.message);
-  console.error('   Stack:', error.stack);
-  logger.error('Uncaught exception', {
-    error: error.message,
-    stack: error.stack,
-  });
-  // Don't exit immediately - let Railway handle restart
-  setTimeout(() => process.exit(1), 1000);
-});
-
-// Handle process termination
-process.on('SIGINT', () => {
-  console.log('🛑 Received SIGINT. Shutting down ACE Prime...');
-  client.destroy();
-  process.exit(0);
-});
-
-process.on('SIGTERM', () => {
-  console.log('🛑 Received SIGTERM. Shutting down ACE Prime...');
-  client.destroy();
-  process.exit(0);
-});
-
-// Start the bot
-(async () => {
-  try {
-    console.log('🔐 Attempting to login to Discord...');
-    console.log(`   Token length: ${token?.length} characters`);
-    console.log(`   Token prefix: ${token?.substring(0, 3)}...`);
-    
-    await client.login(token);
-    
-    // If login succeeds, the 'ready' event will fire
-    console.log('✅ Login successful! Waiting for ready event...');
-  } catch (err) {
-    const error = err as Error;
-    console.error('❌ Discord login failed!');
-    console.error('   Error:', error.message);
-    console.error('   Stack:', error.stack);
-    
-    if (error.message.includes('TOKEN_INVALID')) {
-      console.error('   → The Discord token is invalid. Please check DISCORD_TOKEN in Railway.');
-    } else if (error.message.includes('TOKEN_MISSING')) {
-      console.error('   → The Discord token is missing. Please set DISCORD_TOKEN in Railway.');
-    } else if (error.message.includes('ENOTFOUND') || error.message.includes('ECONNREFUSED')) {
-      console.error('   → Network error. Check Railway network settings.');
+    await command.execute(interaction, persona);
+  } catch (error) {
+    console.error('Command error:', error);
+    const reply = { content: '❌ Something went wrong!', ephemeral: true };
+    if (interaction.replied || interaction.deferred) {
+      await interaction.followUp(reply);
+    } else {
+      await interaction.reply(reply);
     }
-    
-    logger.error('Discord login failed', {
-      error: error.message,
-      stack: error.stack,
-    });
-    
+  }
+});
+
+// Handle graceful shutdown
+process.on('SIGINT', async () => {
+  console.log('🛑 Shutting down...');
+  await prisma.$disconnect();
+  client.destroy();
+  process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
+  console.log('🛑 Shutting down...');
+  await prisma.$disconnect();
+  client.destroy();
+  process.exit(0);
+});
+
+// Start bot
+async function start() {
+  try {
+    await registerCommands();
+    await client.login(TOKEN);
+  } catch (error) {
+    console.error('❌ Failed to start:', error);
+    await prisma.$disconnect().catch(() => {});
     process.exit(1);
   }
-})();
+}
+
+start();

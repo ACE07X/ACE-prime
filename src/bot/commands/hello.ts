@@ -1,15 +1,15 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
-import { SlashCommand } from './types';
 
-const command: SlashCommand = {
+export const helloCommand = {
   data: new SlashCommandBuilder()
     .setName('hello')
-    .setDescription('Say hello'),
+    .setDescription('Say hello to ACE Prime'),
 
-  async execute(interaction: ChatInputCommandInteraction) {
-    await interaction.reply('Hello 👋');
+  async execute(interaction: ChatInputCommandInteraction, persona: string) {
+    const greeting = persona === 'butler'
+      ? `Hello ACE! 👋 How may I assist you today?`
+      : `Hello ${interaction.user.displayName}! 👋 I'm ACE Prime, your project assistant.`;
+
+    await interaction.reply(greeting);
   },
 };
-
-export default command;
-
