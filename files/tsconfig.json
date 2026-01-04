@@ -20,36 +20,7 @@
     "allowSyntheticDefaultImports": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "baseUrl": ".",
-    "paths": {
-      "@/*": [
-        "src/*"
-      ],
-      "@commands/*": [
-        "src/commands/*"
-      ],
-      "@services/*": [
-        "src/services/*"
-      ],
-      "@database/*": [
-        "src/database/*"
-      ],
-      "@utils/*": [
-        "src/utils/*"
-      ],
-      "@types/*": [
-        "src/types/*"
-      ],
-      "@middleware/*": [
-        "src/middleware/*"
-      ],
-      "@events/*": [
-        "src/events/*"
-      ],
-      "@api/*": [
-        "src/api/*"
-      ]
-    }
+    "baseUrl": "."
   },
   "include": [
     "src/**/*"
