@@ -1,29 +1,30 @@
 "use client";
 
 import Link from "next/link";
-
-const stats = [
-  { label: "Active Projects", value: "12", icon: "📁", color: "from-blue-500 to-indigo-500" },
-  { label: "Open Tasks", value: "48", icon: "✅", color: "from-emerald-500 to-teal-500" },
-  { label: "Team Members", value: "8", icon: "👥", color: "from-orange-500 to-red-500" },
-  { label: "AI Chats Today", value: "156", icon: "💬", color: "from-violet-500 to-purple-500" },
-];
-
-const quickActions = [
-  { label: "New Project", icon: "📁", href: "/projects/new", color: "bg-blue-500" },
-  { label: "Create Task", icon: "✅", href: "/tasks/new", color: "bg-emerald-500" },
-  { label: "New Chat", icon: "✨", href: "/chat", color: "bg-indigo-500" },
-  { label: "Team Standup", icon: "🎯", href: "/team/standup", color: "bg-orange-500" },
-];
-
-const recentChats = [
-  { title: "Debug authentication flow", time: "5 min ago" },
-  { title: "Generate API documentation", time: "1 hour ago" },
-  { title: "Review pull request #42", time: "2 hours ago" },
-  { title: "Optimize database queries", time: "Yesterday" },
-];
+import { useEffect, useState } from "react";
 
 export default function Dashboard() {
+  const [stats, setStats] = useState([
+    { label: "Active Projects", value: "-", icon: "📁", color: "from-blue-500 to-indigo-500" },
+    { label: "Open Tasks", value: "-", icon: "✅", color: "from-emerald-500 to-teal-500" },
+    { label: "Team Members", value: "-", icon: "👥", color: "from-orange-500 to-red-500" },
+    { label: "AI Chats Today", value: "-", icon: "💬", color: "from-violet-500 to-purple-500" },
+  ]);
+
+  useEffect(() => {
+    fetch('/api/stats')
+      .then(res => res.json())
+      .then(data => {
+        setStats([
+          { label: "Active Projects", value: data.projects?.toString() || "0", icon: "📁", color: "from-blue-500 to-indigo-500" },
+          { label: "Open Tasks", value: data.tasks?.toString() || "0", icon: "✅", color: "from-emerald-500 to-teal-500" },
+          { label: "Team Members", value: data.team?.toString() || "0", icon: "👥", color: "from-orange-500 to-red-500" },
+          { label: "AI Chats Today", value: data.chats?.toString() || "0", icon: "💬", color: "from-violet-500 to-purple-500" },
+        ]);
+      })
+      .catch(err => console.error(err));
+  }, []);
+
   return (
     <div className="h-full overflow-y-auto p-8 bg-[#09090b]">
       {/* Header */}

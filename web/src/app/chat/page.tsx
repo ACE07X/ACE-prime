@@ -33,22 +33,38 @@ export default function ChatPage() {
             content: input.trim(),
         };
 
-        setMessages((prev) => [...prev, userMessage]);
+        const newMessages = [...messages, userMessage];
+        setMessages(newMessages);
         setInput("");
         setIsLoading(true);
 
         try {
-            // Simulate AI delay
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    messages: newMessages.map(m => ({ role: m.role, content: m.content }))
+                }),
+            });
+
+            if (!response.ok) throw new Error('Failed to fetch response');
+
+            const data = await response.json();
 
             const aiMessage = {
                 id: (Date.now() + 1).toString(),
                 role: "assistant" as const,
-                content: "I'm a simulated professional AI assistant. The backend connection will be implemented in the next phase. I can help you structure your project code or explain concepts.",
+                content: data.content || "I apologize, but I encountered an error processing your request.",
             };
             setMessages((prev) => [...prev, aiMessage]);
         } catch (error) {
             console.error("Failed to send message:", error);
+            const errorMessage = {
+                id: (Date.now() + 1).toString(),
+                role: "assistant" as const,
+                content: "System Error: Unable to connect to neural network. Please check your connection and try again.",
+            };
+            setMessages((prev) => [...prev, errorMessage]);
         } finally {
             setIsLoading(false);
         }
