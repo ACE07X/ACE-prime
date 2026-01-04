@@ -1,5 +1,0 @@
-node_modules/
-dist/
-.env
-*.log
-RAILWAY_ENV_VARS.txt
