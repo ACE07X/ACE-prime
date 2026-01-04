@@ -25,6 +25,20 @@ export default function Dashboard() {
       .catch(err => console.error(err));
   }, []);
 
+  const quickActions = [
+    { label: "New Project", icon: "📁", href: "/projects/new", color: "bg-blue-500" },
+    { label: "Create Task", icon: "✅", href: "/tasks/new", color: "bg-emerald-500" },
+    { label: "New Chat", icon: "✨", href: "/chat", color: "bg-indigo-500" },
+    { label: "Team Standup", icon: "🎯", href: "/team/standup", color: "bg-orange-500" },
+  ];
+
+  const recentChats = [
+    { title: "Debug authentication flow", time: "5 min ago" },
+    { title: "Generate API documentation", time: "1 hour ago" },
+    { title: "Review pull request #42", time: "2 hours ago" },
+    { title: "Optimize database queries", time: "Yesterday" },
+  ];
+
   return (
     <div className="h-full overflow-y-auto p-8 bg-[#09090b]">
       {/* Header */}
