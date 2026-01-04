@@ -1,4 +1,5 @@
 [build]
+root = "files/"
 builder = "NIXPACKS"
 
 [deploy]
