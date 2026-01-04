@@ -1,14 +1,5 @@
 [build]
 builder = "NIXPACKS"
-watchPatterns = ["files/**"]
-
-[build.nixpacks]
-# Use npm ci for clean install, then build
-installCmd = "cd files && npm ci --include=dev"
-buildCmd = "cd files && npm run build"
 
 [deploy]
-startCommand = "cd files && npm start"
-healthcheckPath = "/"
-restartPolicyType = "ON_FAILURE"
-restartPolicyMaxRetries = 3
+startCommand = "npm start"
