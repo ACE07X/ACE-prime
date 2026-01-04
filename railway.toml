@@ -2,5 +2,10 @@
 root = "files/"
 builder = "NIXPACKS"
 
+[build.nixpacks]
+plan.phases.setup.nixPkgs = ["nodejs-20_x", "npm"]
+plan.phases.install.cmds = ["npm install"]
+plan.phases.build.cmds = ["npm run build"]
+
 [deploy]
 startCommand = "npm start"
