@@ -79,6 +79,12 @@ const defaultSettings: UserSettings = {
     notifications: { email: true, push: true, slack: false, discord: true },
 };
 
+export interface ChatMessage {
+    id: string;
+    role: "user" | "assistant";
+    content: string;
+}
+
 // Storage keys
 const KEYS = {
     TEAM: 'soultech_team',
@@ -86,6 +92,7 @@ const KEYS = {
     TASKS: 'soultech_tasks',
     SETTINGS: 'soultech_settings',
     CHATS_COUNT: 'soultech_chats_count',
+    CHAT_MESSAGES: 'soultech_chat_messages',
 };
 
 // Check if we're in browser
@@ -232,4 +239,20 @@ export function incrementChatsCount(): void {
         const current = parseInt(localStorage.getItem(KEYS.CHATS_COUNT) || '0');
         localStorage.setItem(KEYS.CHATS_COUNT, (current + 1).toString());
     }
+}
+
+// Chat Messages
+export function getChatMessages(): ChatMessage[] {
+    if (!isBrowser) return [];
+    const stored = localStorage.getItem(KEYS.CHAT_MESSAGES);
+    if (!stored) return [];
+    return JSON.parse(stored);
+}
+
+export function saveChatMessages(messages: ChatMessage[]): void {
+    if (isBrowser) localStorage.setItem(KEYS.CHAT_MESSAGES, JSON.stringify(messages));
+}
+
+export function clearChatMessages(): void {
+    if (isBrowser) localStorage.removeItem(KEYS.CHAT_MESSAGES);
 }

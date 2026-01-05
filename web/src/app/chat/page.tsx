@@ -1,13 +1,32 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { getChatMessages, saveChatMessages, type ChatMessage } from "@/lib/storage";
 
 export default function ChatPage() {
-    const [messages, setMessages] = useState<Array<{ id: string; role: "user" | "assistant"; content: string }>>([]);
+    const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [input, setInput] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
+    const isInitialMount = useRef(true);
+
+    // Load messages from localStorage on mount
+    useEffect(() => {
+        const savedMessages = getChatMessages();
+        if (savedMessages.length > 0) {
+            setMessages(savedMessages);
+        }
+    }, []);
+
+    // Save messages to localStorage when they change (but not on initial mount)
+    useEffect(() => {
+        if (isInitialMount.current) {
+            isInitialMount.current = false;
+            return;
+        }
+        saveChatMessages(messages);
+    }, [messages]);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
