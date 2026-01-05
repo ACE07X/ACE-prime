@@ -47,12 +47,26 @@ export class GitIntegration {
                     author: commit.author_name,
                     date: commit.date,
                     message: commit.message,
-                    changes: diff?.files.map(f => ({
-                        type: f.binary ? 'modified' : (f.insertions > 0 && f.deletions === 0 ? 'added' : 'modified'),
-                        file: f.file,
-                        insertions: f.insertions,
-                        deletions: f.deletions,
-                    })) || [],
+                    changes: diff?.files.map(f => {
+                        if (f.binary) {
+                            return {
+                                type: 'modified' as const,
+                                file: f.file,
+                                insertions: 0,
+                                deletions: 0,
+                            };
+                        }
+                        const textFile = f as any;
+                        const insertions = textFile.insertions || 0;
+                        const deletions = textFile.deletions || 0;
+                        const type = (insertions > 0 && deletions === 0 ? 'added' : 'modified') as 'added' | 'modified';
+                        return {
+                            type,
+                            file: f.file,
+                            insertions: insertions,
+                            deletions: deletions,
+                        };
+                    }) || [],
                 });
             }
 
