@@ -1,5 +1,6 @@
 import { AutonomousLoop } from './autonomousLoop.js';
 import * as path from 'path';
+import * as http from 'http';
 
 console.log(`
 ╔═══════════════════════════════════════════════════════════╗
@@ -49,3 +50,14 @@ if (scanOnly) {
 } else {
     agent.start();
 }
+
+// Start a minimal HTTP server for Railway health checks
+const port = process.env.PORT || 3000;
+const server = http.createServer((req, res) => {
+    res.writeHead(200);
+    res.end('Ultra ACE Agent is running');
+});
+
+server.listen(port, () => {
+    console.log(`🌐 HTTP server listening on port ${port}`);
+});
