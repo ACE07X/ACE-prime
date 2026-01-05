@@ -4,23 +4,20 @@ FROM node:20-alpine
 # Set working directory
 WORKDIR /app
 
-# Copy package files from files/ directory
-COPY files/package*.json ./
+# Copy package files from web/ directory
+COPY web/package*.json ./
 
-# Install ALL dependencies (including dev for build)
+# Install dependencies
 RUN npm install
 
-# Copy source code from files/ directory
-COPY files/ .
+# Copy source code from web/ directory
+COPY web/ .
 
-# Build TypeScript
+# Build Next.js application
 RUN npm run build
 
-# Remove dev dependencies after build
-RUN npm prune --production
-
-# Expose port (optional, Railway auto-detects)
+# Expose port 3000
 EXPOSE 3000
 
-# Start the bot
+# Start the application
 CMD ["npm", "start"]
