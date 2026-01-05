@@ -1,0 +1,23 @@
+# Ultra ACE Agent - Production Dockerfile
+FROM node:20-alpine
+
+# Install git for repository scanning
+RUN apk add --no-cache git
+
+WORKDIR /app
+
+# Copy the entire repository to allow scanning
+COPY . .
+
+# Install dependencies for the agent
+WORKDIR /app/agent
+RUN npm install
+RUN npm run build
+
+# Set environment to production
+ENV NODE_ENV=production
+
+# Start the agent relative to the repo root
+# The agent is in /app/agent, we want it to scan /app
+# By default, the agent scans ../../ relative to built index.js
+CMD ["npm", "start"]
