@@ -26,7 +26,7 @@ export function Sidebar() {
                             <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
                         </svg>
                     </div>
-                    <span className="text-sm font-semibold tracking-tight text-white">Ultra ACE</span>
+                    <span className="text-sm font-semibold tracking-tight text-white">Soul Tech</span>
                 </div>
             </div>
 
@@ -41,8 +41,8 @@ export function Sidebar() {
                             <Link
                                 href={item.href}
                                 className={`flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-all duration-200 ${pathname === item.href
-                                        ? "bg-[#27272a] text-white font-medium shadow-sm"
-                                        : "text-zinc-400 hover:text-zinc-200 hover:bg-[#27272a]/50"
+                                    ? "bg-[#27272a] text-white font-medium shadow-sm"
+                                    : "text-zinc-400 hover:text-zinc-200 hover:bg-[#27272a]/50"
                                     }`}
                             >
                                 <span className={`text-base ${pathname === item.href ? "text-indigo-400" : "opacity-70"}`}>{item.icon}</span>

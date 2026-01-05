@@ -8,8 +8,8 @@ const orbitron = Orbitron({ subsets: ["latin"], variable: "--font-orbitron" });
 const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" });
 
 export const metadata: Metadata = {
-  title: "Ultra ACE | Futuristic Dashboard",
-  description: "AI-powered development assistant",
+  title: "Soul Tech | Dashboard",
+  description: "Internal company dashboard for Soul Tech",
 };
 
 export default function RootLayout({

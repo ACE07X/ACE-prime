@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getSettings, saveSettings, UserSettings } from "@/lib/storage";
 
 interface SettingSection {
     id: string;
@@ -14,18 +15,26 @@ const sections: SettingSection[] = [
     { id: "notifications", title: "Notifications", icon: "🔔" },
     { id: "integrations", title: "Integrations", icon: "🔗" },
     { id: "security", title: "Security", icon: "🔒" },
-    { id: "billing", title: "Billing", icon: "💳" },
 ];
 
 export default function SettingsPage() {
     const [activeSection, setActiveSection] = useState("profile");
-    const [darkMode, setDarkMode] = useState(true);
-    const [notifications, setNotifications] = useState({
-        email: true,
-        push: true,
-        slack: false,
-        discord: true,
-    });
+    const [settings, setSettings] = useState<UserSettings | null>(null);
+    const [saved, setSaved] = useState(false);
+
+    useEffect(() => {
+        setSettings(getSettings());
+    }, []);
+
+    const handleSave = () => {
+        if (settings) {
+            saveSettings(settings);
+            setSaved(true);
+            setTimeout(() => setSaved(false), 2000);
+        }
+    };
+
+    if (!settings) return null;
 
     return (
         <div className="h-full overflow-y-auto">
@@ -68,10 +77,8 @@ export default function SettingsPage() {
                                         🚀
                                     </div>
                                     <div>
-                                        <button className="px-4 py-2 bg-[#6366f1] hover:bg-[#4f46e5] rounded-lg text-sm font-medium transition-colors">
-                                            Change Avatar
-                                        </button>
-                                        <p className="text-sm text-[#71717a] mt-2">JPG, PNG or GIF. Max 2MB</p>
+                                        <p className="text-lg font-medium">{settings.profile.name}</p>
+                                        <p className="text-sm text-[#71717a]">Soul Tech Team Member</p>
                                     </div>
                                 </div>
 
@@ -80,7 +87,8 @@ export default function SettingsPage() {
                                         <label className="block text-sm font-medium mb-2">Display Name</label>
                                         <input
                                             type="text"
-                                            defaultValue="ACE07X"
+                                            value={settings.profile.name}
+                                            onChange={(e) => setSettings({ ...settings, profile: { ...settings.profile, name: e.target.value } })}
                                             className="w-full px-4 py-3 bg-[#252525] border border-[#3a3a3a] rounded-lg focus:outline-none focus:border-[#6366f1] transition-colors"
                                         />
                                     </div>
@@ -88,7 +96,8 @@ export default function SettingsPage() {
                                         <label className="block text-sm font-medium mb-2">Email</label>
                                         <input
                                             type="email"
-                                            defaultValue="ace07x@ultraace.dev"
+                                            value={settings.profile.email}
+                                            onChange={(e) => setSettings({ ...settings, profile: { ...settings.profile, email: e.target.value } })}
                                             className="w-full px-4 py-3 bg-[#252525] border border-[#3a3a3a] rounded-lg focus:outline-none focus:border-[#6366f1] transition-colors"
                                         />
                                     </div>
@@ -96,14 +105,17 @@ export default function SettingsPage() {
                                         <label className="block text-sm font-medium mb-2">Bio</label>
                                         <textarea
                                             rows={3}
-                                            defaultValue="Full-stack developer building amazing things with AI."
+                                            value={settings.profile.bio}
+                                            onChange={(e) => setSettings({ ...settings, profile: { ...settings.profile, bio: e.target.value } })}
                                             className="w-full px-4 py-3 bg-[#252525] border border-[#3a3a3a] rounded-lg focus:outline-none focus:border-[#6366f1] transition-colors resize-none"
                                         />
                                     </div>
                                 </div>
 
-                                <div className="mt-6 pt-6 border-t border-[#2a2a2a] flex justify-end">
-                                    <button className="px-6 py-2 bg-[#6366f1] hover:bg-[#4f46e5] rounded-lg font-medium transition-colors">
+                                <div className="mt-6 pt-6 border-t border-[#2a2a2a] flex justify-between items-center">
+                                    {saved && <span className="text-green-500 text-sm">✓ Changes saved!</span>}
+                                    {!saved && <span />}
+                                    <button onClick={handleSave} className="px-6 py-2 bg-[#6366f1] hover:bg-[#4f46e5] rounded-lg font-medium transition-colors">
                                         Save Changes
                                     </button>
                                 </div>
@@ -122,10 +134,12 @@ export default function SettingsPage() {
                                             <p className="text-sm text-[#71717a]">Use dark theme across the application</p>
                                         </div>
                                         <button
-                                            onClick={() => setDarkMode(!darkMode)}
-                                            className={`w-12 h-6 rounded-full transition-colors ${darkMode ? "bg-[#6366f1]" : "bg-[#3a3a3a]"}`}
+                                            onClick={() => {
+                                                setSettings({ ...settings, appearance: { ...settings.appearance, darkMode: !settings.appearance.darkMode } });
+                                            }}
+                                            className={`w-12 h-6 rounded-full transition-colors ${settings.appearance.darkMode ? "bg-[#6366f1]" : "bg-[#3a3a3a]"}`}
                                         >
-                                            <div className={`w-5 h-5 bg-white rounded-full transition-transform ${darkMode ? "translate-x-6" : "translate-x-0.5"}`} />
+                                            <div className={`w-5 h-5 bg-white rounded-full transition-transform ${settings.appearance.darkMode ? "translate-x-6" : "translate-x-0.5"}`} />
                                         </button>
                                     </div>
 
@@ -135,7 +149,8 @@ export default function SettingsPage() {
                                             {["#6366f1", "#ec4899", "#14b8a6", "#f59e0b", "#ef4444", "#8b5cf6"].map((color) => (
                                                 <button
                                                     key={color}
-                                                    className="w-10 h-10 rounded-lg border-2 border-transparent hover:border-white transition-colors"
+                                                    onClick={() => setSettings({ ...settings, appearance: { ...settings.appearance, accentColor: color } })}
+                                                    className={`w-10 h-10 rounded-lg border-2 transition-colors ${settings.appearance.accentColor === color ? "border-white" : "border-transparent"}`}
                                                     style={{ backgroundColor: color }}
                                                 />
                                             ))}
@@ -145,16 +160,25 @@ export default function SettingsPage() {
                                     <div>
                                         <h3 className="font-medium mb-4">Font Size</h3>
                                         <div className="flex gap-3">
-                                            {["Small", "Medium", "Large"].map((size) => (
+                                            {(["small", "medium", "large"] as const).map((size) => (
                                                 <button
                                                     key={size}
-                                                    className={`px-4 py-2 rounded-lg transition-colors ${size === "Medium" ? "bg-[#6366f1]" : "bg-[#252525] hover:bg-[#3a3a3a]"}`}
+                                                    onClick={() => setSettings({ ...settings, appearance: { ...settings.appearance, fontSize: size } })}
+                                                    className={`px-4 py-2 rounded-lg capitalize transition-colors ${settings.appearance.fontSize === size ? "bg-[#6366f1]" : "bg-[#252525] hover:bg-[#3a3a3a]"}`}
                                                 >
                                                     {size}
                                                 </button>
                                             ))}
                                         </div>
                                     </div>
+                                </div>
+
+                                <div className="mt-6 pt-6 border-t border-[#2a2a2a] flex justify-between items-center">
+                                    {saved && <span className="text-green-500 text-sm">✓ Changes saved!</span>}
+                                    {!saved && <span />}
+                                    <button onClick={handleSave} className="px-6 py-2 bg-[#6366f1] hover:bg-[#4f46e5] rounded-lg font-medium transition-colors">
+                                        Save Changes
+                                    </button>
                                 </div>
                             </div>
                         )}
@@ -165,20 +189,28 @@ export default function SettingsPage() {
                                 <h2 className="text-xl font-semibold mb-6">Notifications</h2>
 
                                 <div className="space-y-4">
-                                    {Object.entries(notifications).map(([key, value]) => (
+                                    {(Object.keys(settings.notifications) as (keyof typeof settings.notifications)[]).map((key) => (
                                         <div key={key} className="flex items-center justify-between p-4 bg-[#252525] rounded-lg">
                                             <div>
                                                 <h3 className="font-medium capitalize">{key} Notifications</h3>
                                                 <p className="text-sm text-[#71717a]">Receive notifications via {key}</p>
                                             </div>
                                             <button
-                                                onClick={() => setNotifications(prev => ({ ...prev, [key]: !prev[key as keyof typeof prev] }))}
-                                                className={`w-12 h-6 rounded-full transition-colors ${value ? "bg-[#6366f1]" : "bg-[#3a3a3a]"}`}
+                                                onClick={() => setSettings({ ...settings, notifications: { ...settings.notifications, [key]: !settings.notifications[key] } })}
+                                                className={`w-12 h-6 rounded-full transition-colors ${settings.notifications[key] ? "bg-[#6366f1]" : "bg-[#3a3a3a]"}`}
                                             >
-                                                <div className={`w-5 h-5 bg-white rounded-full transition-transform ${value ? "translate-x-6" : "translate-x-0.5"}`} />
+                                                <div className={`w-5 h-5 bg-white rounded-full transition-transform ${settings.notifications[key] ? "translate-x-6" : "translate-x-0.5"}`} />
                                             </button>
                                         </div>
                                     ))}
+                                </div>
+
+                                <div className="mt-6 pt-6 border-t border-[#2a2a2a] flex justify-between items-center">
+                                    {saved && <span className="text-green-500 text-sm">✓ Changes saved!</span>}
+                                    {!saved && <span />}
+                                    <button onClick={handleSave} className="px-6 py-2 bg-[#6366f1] hover:bg-[#4f46e5] rounded-lg font-medium transition-colors">
+                                        Save Changes
+                                    </button>
                                 </div>
                             </div>
                         )}
@@ -261,43 +293,6 @@ export default function SettingsPage() {
                                     <button className="px-6 py-2 bg-[#6366f1] hover:bg-[#4f46e5] rounded-lg font-medium transition-colors">
                                         Update Password
                                     </button>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Billing Section */}
-                        {activeSection === "billing" && (
-                            <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6 animate-fadeIn">
-                                <h2 className="text-xl font-semibold mb-6">Billing</h2>
-
-                                <div className="p-6 bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] rounded-xl mb-6">
-                                    <div className="flex items-center justify-between mb-4">
-                                        <span className="text-sm font-medium opacity-80">Current Plan</span>
-                                        <span className="px-3 py-1 bg-white/20 rounded-full text-sm">Pro</span>
-                                    </div>
-                                    <h3 className="text-3xl font-bold mb-2">$29<span className="text-lg font-normal opacity-80">/month</span></h3>
-                                    <p className="opacity-80">Unlimited projects, priority support, advanced AI features</p>
-                                </div>
-
-                                <div className="space-y-4">
-                                    <div className="flex items-center justify-between p-4 bg-[#252525] rounded-lg">
-                                        <div>
-                                            <h3 className="font-medium">Payment Method</h3>
-                                            <p className="text-sm text-[#71717a]">Visa ending in 4242</p>
-                                        </div>
-                                        <button className="text-[#6366f1] hover:underline text-sm">Update</button>
-                                    </div>
-                                    <div className="flex items-center justify-between p-4 bg-[#252525] rounded-lg">
-                                        <div>
-                                            <h3 className="font-medium">Next Billing Date</h3>
-                                            <p className="text-sm text-[#71717a]">February 1, 2026</p>
-                                        </div>
-                                        <button className="text-[#71717a] hover:text-white text-sm">View History</button>
-                                    </div>
-                                </div>
-
-                                <div className="mt-6 pt-6 border-t border-[#2a2a2a]">
-                                    <button className="text-red-500 hover:underline text-sm">Cancel Subscription</button>
                                 </div>
                             </div>
                         )}

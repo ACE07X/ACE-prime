@@ -45,7 +45,7 @@ export default function Dashboard() {
       <div className="max-w-7xl mx-auto">
         <div className="mb-8">
           <h1 className="text-2xl font-semibold text-white tracking-tight mb-1">Dashboard</h1>
-          <p className="text-zinc-400 text-sm">Welcome back, ACE07X. Here's your workspace overview.</p>
+          <p className="text-zinc-400 text-sm">Welcome back! Here's your workspace overview.</p>
         </div>
 
         {/* Stats Grid */}
