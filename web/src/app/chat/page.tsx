@@ -57,6 +57,15 @@ export default function ChatPage() {
         setInput("");
         setIsLoading(true);
 
+        // Create placeholder for AI response
+        const aiMessageId = (Date.now() + 1).toString();
+        const aiMessage = {
+            id: aiMessageId,
+            role: "assistant" as const,
+            content: "",
+        };
+        setMessages((prev) => [...prev, aiMessage]);
+
         try {
             const response = await fetch('/api/chat', {
                 method: 'POST',
@@ -68,22 +77,62 @@ export default function ChatPage() {
 
             if (!response.ok) throw new Error('Failed to fetch response');
 
-            const data = await response.json();
+            const reader = response.body?.getReader();
+            const decoder = new TextDecoder();
 
-            const aiMessage = {
-                id: (Date.now() + 1).toString(),
-                role: "assistant" as const,
-                content: data.content || "I apologize, but I encountered an error processing your request.",
-            };
-            setMessages((prev) => [...prev, aiMessage]);
+            if (!reader) throw new Error('No reader available');
+
+            let fullContent = "";
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value);
+                const lines = chunk.split('\n');
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const data = line.slice(6);
+                        if (data === '[DONE]') continue;
+
+                        try {
+                            const parsed = JSON.parse(data);
+                            if (parsed.content) {
+                                fullContent += parsed.content;
+                                setMessages((prev) =>
+                                    prev.map(m =>
+                                        m.id === aiMessageId
+                                            ? { ...m, content: fullContent }
+                                            : m
+                                    )
+                                );
+                            }
+                        } catch {
+                            // Skip invalid JSON
+                        }
+                    }
+                }
+            }
+
+            if (!fullContent) {
+                setMessages((prev) =>
+                    prev.map(m =>
+                        m.id === aiMessageId
+                            ? { ...m, content: "I apologize, but I encountered an error processing your request." }
+                            : m
+                    )
+                );
+            }
         } catch (error) {
             console.error("Failed to send message:", error);
-            const errorMessage = {
-                id: (Date.now() + 1).toString(),
-                role: "assistant" as const,
-                content: "System Error: Unable to connect to neural network. Please check your connection and try again.",
-            };
-            setMessages((prev) => [...prev, errorMessage]);
+            setMessages((prev) =>
+                prev.map(m =>
+                    m.id === aiMessageId
+                        ? { ...m, content: "System Error: Unable to connect. Please try again." }
+                        : m
+                )
+            );
         } finally {
             setIsLoading(false);
         }

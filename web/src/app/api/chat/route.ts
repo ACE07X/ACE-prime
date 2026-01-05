@@ -1,5 +1,4 @@
 import OpenAI from 'openai';
-import { NextResponse } from 'next/server';
 
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
@@ -21,25 +20,6 @@ FOR CODE REQUESTS:
 - A brief 1-2 sentence explanation if needed
 - Skip "Key Points", "Prerequisites", setup instructions
 
-WRONG (too verbose):
-"### Prerequisites
-- Express
-- JWT
-### Code
-\`\`\`js
-...long code...
-\`\`\`
-### Key Points
-- Point 1
-- Point 2"
-
-RIGHT (clean):
-"Here's a simple auth API:
-\`\`\`js
-// minimal focused code
-\`\`\`
-Replace 'secretkey' with an env variable in production."
-
 Be helpful, concise, and human.`;
 
 export async function POST(req: Request) {
@@ -47,29 +27,50 @@ export async function POST(req: Request) {
         const { messages } = await req.json();
 
         if (!messages || !Array.isArray(messages)) {
-            return NextResponse.json({ error: 'Messages array is required' }, { status: 400 });
+            return new Response(JSON.stringify({ error: 'Messages array is required' }), {
+                status: 400,
+                headers: { 'Content-Type': 'application/json' }
+            });
         }
 
-        const completion = await openai.chat.completions.create({
+        const stream = await openai.chat.completions.create({
             model: 'gpt-4o',
             messages: [
                 { role: 'system', content: SYSTEM_PROMPT },
                 ...messages
             ],
-            temperature: 0.5, // Lower for more consistent, less verbose responses
-            max_tokens: 1000, // Limit response length
-            presence_penalty: 0.1, // Slight penalty to reduce repetition
-            frequency_penalty: 0.1,
+            temperature: 0.5,
+            max_tokens: 1000,
+            stream: true,
         });
 
-        const reply = completion.choices[0].message;
-        return NextResponse.json(reply);
+        const encoder = new TextEncoder();
+        const readable = new ReadableStream({
+            async start(controller) {
+                for await (const chunk of stream) {
+                    const content = chunk.choices[0]?.delta?.content || '';
+                    if (content) {
+                        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content })}\n\n`));
+                    }
+                }
+                controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+                controller.close();
+            },
+        });
+
+        return new Response(readable, {
+            headers: {
+                'Content-Type': 'text/event-stream',
+                'Cache-Control': 'no-cache',
+                'Connection': 'keep-alive',
+            },
+        });
 
     } catch (error: any) {
         console.error('OpenAI Error:', error);
-        return NextResponse.json(
-            { error: error.message || 'Failed to generate response' },
-            { status: 500 }
-        );
+        return new Response(JSON.stringify({ error: error.message || 'Failed to generate response' }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' }
+        });
     }
 }
