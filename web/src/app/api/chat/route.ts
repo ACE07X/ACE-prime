@@ -24,6 +24,14 @@ Be helpful, concise, and human.`;
 
 export async function POST(req: Request) {
     try {
+        // Check if API key is configured
+        if (!process.env.OPENAI_API_KEY) {
+            return new Response(JSON.stringify({ error: 'OpenAI API key not configured' }), {
+                status: 500,
+                headers: { 'Content-Type': 'application/json' }
+            });
+        }
+
         const { messages } = await req.json();
 
         if (!messages || !Array.isArray(messages)) {
@@ -47,14 +55,20 @@ export async function POST(req: Request) {
         const encoder = new TextEncoder();
         const readable = new ReadableStream({
             async start(controller) {
-                for await (const chunk of stream) {
-                    const content = chunk.choices[0]?.delta?.content || '';
-                    if (content) {
-                        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content })}\n\n`));
+                try {
+                    for await (const chunk of stream) {
+                        const content = chunk.choices[0]?.delta?.content || '';
+                        if (content) {
+                            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content })}\n\n`));
+                        }
                     }
+                    controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+                    controller.close();
+                } catch (streamError: any) {
+                    console.error('Stream error:', streamError);
+                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: streamError.message })}\n\n`));
+                    controller.close();
                 }
-                controller.enqueue(encoder.encode('data: [DONE]\n\n'));
-                controller.close();
             },
         });
 
