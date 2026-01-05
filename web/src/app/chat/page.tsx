@@ -162,7 +162,7 @@ export default function ChatPage() {
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             onKeyDown={handleKeyDown}
-                            placeholder="Message Ultra ACE..."
+                            placeholder="Message Soul Tech AI..."
                             rows={1}
                             className="w-full bg-transparent px-4 py-3.5 pr-12 resize-none focus:outline-none max-h-48 text-[15px] text-zinc-200 placeholder:text-zinc-500"
                             style={{ minHeight: "52px" }}
@@ -182,7 +182,7 @@ export default function ChatPage() {
                         </button>
                     </div>
                     <p className="text-center text-xs text-zinc-500 mt-3">
-                        Ultra ACE can make mistakes. Check important info.
+                        Soul Tech AI • For internal use only
                     </p>
                 </form>
             </div>
