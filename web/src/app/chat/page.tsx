@@ -3,19 +3,32 @@
 import { useState, useRef, useEffect } from "react";
 import { getChatMessages, saveChatMessages, type ChatMessage } from "@/lib/storage";
 
+interface Attachment {
+    type: 'image' | 'file';
+    name: string;
+    url: string;
+    data?: string; // base64 for images
+}
+
+interface ExtendedMessage extends ChatMessage {
+    attachments?: Attachment[];
+}
+
 export default function ChatPage() {
-    const [messages, setMessages] = useState<ChatMessage[]>([]);
+    const [messages, setMessages] = useState<ExtendedMessage[]>([]);
     const [input, setInput] = useState("");
     const [isLoading, setIsLoading] = useState(false);
+    const [attachments, setAttachments] = useState<Attachment[]>([]);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const isInitialMount = useRef(true);
 
     // Load messages from localStorage on mount
     useEffect(() => {
         const savedMessages = getChatMessages();
         if (savedMessages.length > 0) {
-            setMessages(savedMessages);
+            setMessages(savedMessages as ExtendedMessage[]);
         }
     }, []);
 
@@ -42,24 +55,68 @@ export default function ChatPage() {
         }
     }, [isLoading]);
 
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (!files) return;
+
+        Array.from(files).forEach(file => {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const isImage = file.type.startsWith('image/');
+                const newAttachment: Attachment = {
+                    type: isImage ? 'image' : 'file',
+                    name: file.name,
+                    url: URL.createObjectURL(file),
+                    data: isImage ? event.target?.result as string : undefined
+                };
+                setAttachments(prev => [...prev, newAttachment]);
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // Reset input
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
+    const removeAttachment = (index: number) => {
+        setAttachments(prev => prev.filter((_, i) => i !== index));
+    };
+
     const handleSubmit = async (e?: React.FormEvent) => {
         e?.preventDefault();
-        if (!input.trim() || isLoading) return;
+        if ((!input.trim() && attachments.length === 0) || isLoading) return;
 
-        const userMessage = {
+        // Build message content with attachments info
+        let messageContent = input.trim();
+        if (attachments.length > 0) {
+            const attachmentInfo = attachments.map(a =>
+                a.type === 'image' ? `[Image: ${a.name}]` : `[File: ${a.name}]`
+            ).join(' ');
+            if (messageContent) {
+                messageContent = `${messageContent}\n\n${attachmentInfo}`;
+            } else {
+                messageContent = attachmentInfo;
+            }
+        }
+
+        const userMessage: ExtendedMessage = {
             id: Date.now().toString(),
             role: "user" as const,
-            content: input.trim(),
+            content: messageContent,
+            attachments: attachments.length > 0 ? [...attachments] : undefined
         };
 
         const newMessages = [...messages, userMessage];
         setMessages(newMessages);
         setInput("");
+        setAttachments([]);
         setIsLoading(true);
 
         // Create placeholder for AI response
         const aiMessageId = (Date.now() + 1).toString();
-        const aiMessage = {
+        const aiMessage: ExtendedMessage = {
             id: aiMessageId,
             role: "assistant" as const,
             content: "",
@@ -67,12 +124,28 @@ export default function ChatPage() {
         setMessages((prev) => [...prev, aiMessage]);
 
         try {
+            // Prepare messages for API - include image data for vision
+            const apiMessages = newMessages.map(m => {
+                if (m.attachments?.some(a => a.type === 'image' && a.data)) {
+                    const imageAttachments = m.attachments.filter(a => a.type === 'image' && a.data);
+                    return {
+                        role: m.role,
+                        content: [
+                            { type: 'text', text: m.content },
+                            ...imageAttachments.map(img => ({
+                                type: 'image_url',
+                                image_url: { url: img.data }
+                            }))
+                        ]
+                    };
+                }
+                return { role: m.role, content: m.content };
+            });
+
             const response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    messages: newMessages.map(m => ({ role: m.role, content: m.content }))
-                }),
+                body: JSON.stringify({ messages: apiMessages }),
             });
 
             if (!response.ok) throw new Error('Failed to fetch response');
@@ -193,6 +266,28 @@ export default function ChatPage() {
                                 )}
 
                                 <div className={`max-w-[85%] ${message.role === "user" ? "bg-[#3b82f6] text-white rounded-2xl rounded-tr-sm px-4 py-2.5" : "text-zinc-300 px-0 py-0.5"}`}>
+                                    {/* Show attachments for user messages */}
+                                    {message.attachments && message.attachments.length > 0 && (
+                                        <div className="flex flex-wrap gap-2 mb-2">
+                                            {message.attachments.map((att, idx) => (
+                                                att.type === 'image' ? (
+                                                    <img
+                                                        key={idx}
+                                                        src={att.data || att.url}
+                                                        alt={att.name}
+                                                        className="max-w-[200px] max-h-[150px] rounded-lg object-cover"
+                                                    />
+                                                ) : (
+                                                    <div key={idx} className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-1.5 text-sm">
+                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                        </svg>
+                                                        {att.name}
+                                                    </div>
+                                                )
+                                            ))}
+                                        </div>
+                                    )}
                                     <div className="whitespace-pre-wrap text-[15px] leading-relaxed">{message.content}</div>
                                 </div>
 
@@ -224,7 +319,60 @@ export default function ChatPage() {
             {/* Input Area */}
             <div className="p-6 bg-[#09090b]">
                 <form onSubmit={handleSubmit} className="max-w-3xl mx-auto">
+                    {/* Attachment Preview */}
+                    {attachments.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mb-3 p-3 bg-[#18181b] border border-[#27272a] rounded-xl">
+                            {attachments.map((att, idx) => (
+                                <div key={idx} className="relative group">
+                                    {att.type === 'image' ? (
+                                        <img
+                                            src={att.url}
+                                            alt={att.name}
+                                            className="w-16 h-16 rounded-lg object-cover"
+                                        />
+                                    ) : (
+                                        <div className="w-16 h-16 rounded-lg bg-zinc-800 flex flex-col items-center justify-center">
+                                            <svg className="w-6 h-6 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                            </svg>
+                                            <span className="text-[10px] text-zinc-500 mt-1 truncate max-w-[56px]">{att.name}</span>
+                                        </div>
+                                    )}
+                                    <button
+                                        type="button"
+                                        onClick={() => removeAttachment(idx)}
+                                        className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                                    >
+                                        ×
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
                     <div className="relative bg-[#18181b] border border-[#27272a] rounded-xl focus-within:border-[#3f3f46] focus-within:ring-1 focus-within:ring-[#3f3f46] transition-all shadow-sm">
+                        {/* Hidden file input */}
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            multiple
+                            accept="image/*,.pdf,.txt,.md,.js,.ts,.py,.json,.html,.css"
+                            onChange={handleFileSelect}
+                            className="hidden"
+                        />
+
+                        {/* Attachment button */}
+                        <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="absolute left-3 bottom-3 p-1.5 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 rounded-lg transition-colors"
+                            title="Attach files"
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                            </svg>
+                        </button>
+
                         <textarea
                             ref={inputRef}
                             value={input}
@@ -232,12 +380,12 @@ export default function ChatPage() {
                             onKeyDown={handleKeyDown}
                             placeholder="Message Soul Tech AI..."
                             rows={1}
-                            className="w-full bg-transparent px-4 py-3.5 pr-12 resize-none focus:outline-none max-h-48 text-[15px] text-zinc-200 placeholder:text-zinc-500"
+                            className="w-full bg-transparent pl-12 pr-12 py-3.5 resize-none focus:outline-none max-h-48 text-[15px] text-zinc-200 placeholder:text-zinc-500"
                             style={{ minHeight: "52px" }}
                         />
                         <button
                             type="submit"
-                            disabled={!input.trim() || isLoading}
+                            disabled={(!input.trim() && attachments.length === 0) || isLoading}
                             className="absolute right-2 bottom-2 p-1.5 bg-white text-black hover:bg-zinc-200 disabled:opacity-0 disabled:pointer-events-none rounded-lg transition-all duration-200 shadow-sm"
                         >
                             {isLoading ? (
