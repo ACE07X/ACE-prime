@@ -1,8 +1,15 @@
 import OpenAI from 'openai';
 
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-});
+// Safe OpenAI initialization
+let openai: OpenAI | null = null;
+if (process.env.OPENAI_API_KEY) {
+    openai = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY,
+    });
+    console.log('✅ OpenAI enabled');
+} else {
+    console.warn('⚠️ OpenAI disabled (missing API key)');
+}
 
 const SYSTEM_PROMPT = `You are ACE, the Soul Tech AI assistant. You have a distinct personality and memory.
 
@@ -60,6 +67,13 @@ export async function POST(req: Request) {
         if (!messages || !Array.isArray(messages)) {
             return new Response(JSON.stringify({ error: 'Messages array is required' }), {
                 status: 400,
+                headers: { 'Content-Type': 'application/json' }
+            });
+        }
+
+        if (!openai) {
+            return new Response(JSON.stringify({ error: 'OpenAI is disabled (missing API Key)' }), {
+                status: 503,
                 headers: { 'Content-Type': 'application/json' }
             });
         }
